@@ -1,118 +1,122 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * @format
- */
-
-import React from 'react';
-import type {PropsWithChildren} from 'react';
+import {NavigationContainer, useNavigation} from '@react-navigation/native';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
+  NativeStackNavigationProp,
+  NativeStackScreenProps,
+  createNativeStackNavigator,
+} from '@react-navigation/native-stack';
+import {useState} from 'react';
+import {
+  FlatList,
+  Image,
   StyleSheet,
   Text,
-  useColorScheme,
+  TextInput,
+  TouchableOpacity,
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+type RootStackParamList = {
+  Search: undefined;
+  Detail: {content: string};
+};
 
-type SectionProps = PropsWithChildren<{
-  title: string;
-}>;
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
-function Section({children, title}: SectionProps): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+const ItemSeparatorComponent = () => <View style={styles.itemSeperator} />;
 
-function App(): React.JSX.Element {
-  const isDarkMode = useColorScheme() === 'dark';
+const Search = () => {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [data, setData] = useState();
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+
+  const onEndEditing = () => {
+    fetch(
+      `https://newsapi.org/v2/everything?pageSize=10&page=1&q=${searchTerm}&apiKey=${process.env.API_KEY}`,
+    )
+      .then(res => res.json())
+      .then(json => setData(json));
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={styles.container}>
+      <TextInput
+        onChangeText={text => setSearchTerm(text)}
+        onEndEditing={onEndEditing}
+        style={styles.search}
+        placeholder="Search for a...."
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <FlatList
+        ItemSeparatorComponent={ItemSeparatorComponent}
+        style={styles.list}
+        contentContainerStyle={styles.listContent}
+        data={data?.articles}
+        renderItem={({item}) => (
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate('Detail', {content: item.content})
+            }
+            style={styles.tileContainer}>
+            <Text numberOfLines={3} style={styles.tileTitle}>
+              {item.title}
+            </Text>
+            <Image
+              resizeMode="cover"
+              source={{uri: item.urlToImage}}
+              style={styles.image}
+            />
+          </TouchableOpacity>
+        )}
+      />
+    </View>
+  );
+};
+
+const Detail = ({
+  route,
+}: NativeStackScreenProps<RootStackParamList, 'Detail'>) => {
+  return (
+    <View>
+      <Text>{route.params.content}</Text>
+    </View>
+  );
+};
+
+export default function App() {
+  return (
+    <NavigationContainer>
+      <Stack.Navigator>
+        <Stack.Screen name="Search" component={Search} />
+        <Stack.Screen name="Detail" component={Detail} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
+  itemSeperator: {height: 20},
+  container: {paddingTop: 16, backgroundColor: 'white'},
+  image: {
+    width: '100%',
+    flex: 1,
+    borderBottomLeftRadius: 6,
+    borderBottomRightRadius: 6,
   },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
+  tileTitle: {
+    paddingTop: 8,
+    paddingHorizontal: 16,
+    fontSize: 16,
+    marginBottom: 24,
   },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  tileContainer: {borderWidth: 2, borderRadius: 8, height: 250},
+  list: {marginTop: 16},
+  listContent: {paddingHorizontal: 16, paddingBottom: 80},
+  search: {
+    borderColor: 'gray',
+    borderWidth: 1,
+    marginHorizontal: 16,
+    height: 56,
+    borderRadius: 8,
   },
 });
-
-export default App;
