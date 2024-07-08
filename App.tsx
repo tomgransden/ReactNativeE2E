@@ -32,6 +32,7 @@ const Search = () => {
     useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
   const onEndEditing = () => {
+    console.log('onendediting');
     fetch(
       `https://newsapi.org/v2/everything?pageSize=10&page=1&q=${searchTerm}&apiKey=${process.env.API_KEY}`,
     )
@@ -54,6 +55,7 @@ const Search = () => {
         data={data?.articles}
         renderItem={({item}) => (
           <TouchableOpacity
+            testID="news-item"
             onPress={() =>
               navigation.navigate('Detail', {content: item.content})
             }

@@ -1,0 +1,11 @@
+# flow.yaml
+
+appId: org.reactjs.native.example.RNTestAutomation
+name: Search for news item
+---
+- launchApp
+- tapOn: "Search for a...."
+- inputText: "Food"
+- pressKey: enter
+- tapOn: 
+    id: 'news-item'
